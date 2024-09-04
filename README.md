@@ -22,7 +22,7 @@ different, and the "source of truth" or "vantage point that matters" differs for
 each organization and environment.
 
 ```shell
-Usage of vault-operator:
+Usage of vault-fm-operator:
   -addresses string
         Comma-separated list of two Vault addresses in a replication relationship (default "https://localhost:8200,https://localhost:8300")
   -mode string
