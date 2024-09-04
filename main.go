@@ -10,12 +10,18 @@ import (
 )
 
 const (
-	timeout           = 3 * time.Second
-	kvEnginePath      = "kv"
-	tokenKvPath       = "failover-handler"
+	// Set this to the path of the KV engine mount on your Vault cluster where any
+	// generated operation tokens should be stored
+	kvEnginePath = "kv"
+	// Set this to the KV engine path where the operation token should be stored
+	// This path should be a subpath of the KV engine mount specified above.
+	tokenKvPath = "failover-handler"
+	// Set this to the name of the policy that should be created for the operation token
 	handlerPolicyName = "failover-handler"
-	replicationPath   = "/sys/replication/"
-	vaultTokenHeader  = "X-Vault-Token"
+
+	timeout          = 3 * time.Second
+	replicationPath  = "/sys/replication/"
+	vaultTokenHeader = "X-Vault-Token"
 )
 
 type ConfigData struct {
