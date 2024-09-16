@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/vault-client-go"
 	"github.com/hashicorp/vault-client-go/schema"
@@ -30,24 +31,25 @@ path "sys/replication/+/primary/secondary-token" {
 path "sys/replication/+/primary/revoke-secondary" {
   capabilities = ["update"]
 }
+
+path "auth/token/lookup-self" {
+	capabilities = ["read"]
+}
 `
 
 // Create a policy for the handler token
 func createHandlerPolicy(client *vault.Client) error {
 	log.Println("creating policy", handlerPolicyName)
-	policyResp, err := client.System.PoliciesWriteAclPolicy(context.Background(), handlerPolicyName, schema.PoliciesWriteAclPolicyRequest{
+	_, err := client.System.PoliciesWriteAclPolicy(context.Background(), handlerPolicyName, schema.PoliciesWriteAclPolicyRequest{
 		Policy: handlerPolicy,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating policy: %w", err)
 	}
-	if policyResp.Warnings != nil {
-		log.Printf("policy creation warnings: %v", policyResp.Warnings)
-	}
 	return nil
 }
 
-// Verify the KV engine is present and return the version
+// Verify the KV engine specific by const `kvEnginePath` is present and return the version
 func verifyKvEngine(client *vault.Client) (string, error) {
 	engines, err := client.System.MountsListSecretsEngines(context.Background())
 	if err != nil {
@@ -60,12 +62,12 @@ func verifyKvEngine(client *vault.Client) (string, error) {
 		if config.(map[string]interface{})["type"] == "kv" {
 			if path == kvEnginePath+"/" {
 				confimedPath = true
-				if v, ok := config.(map[string]interface{})["options"].(map[string]interface{})["version"]; ok {
-					if v == "2" {
-						kvVersion = "2"
-					} else {
-						kvVersion = "1"
-					}
+				if v, ok := config.(map[string]interface{})["options"].(map[string]interface{})["version"]; !ok {
+					kvVersion = "1"
+				} else if v == "2" {
+					kvVersion = "2"
+				} else {
+					fmt.Println("KV engine version not found, assuming v1")
 				}
 				break
 			}
@@ -146,20 +148,25 @@ func createToken(client *vault.Client, creatorName string) (string, error) {
 // Verify the handler policy exists and is correct
 func verifyPolicy(client *vault.Client) error {
 	createPolicy := false
+
 	resp, err := client.System.PoliciesReadAclPolicy(context.Background(), handlerPolicyName)
 	if err != nil {
-		return fmt.Errorf("error querying for policy: %w", err)
-	}
-
-	switch resp.Data.Policy {
-	case "":
-		log.Printf("%s policy not found, attempting to create", handlerPolicyName)
-		createPolicy = true
-	case handlerPolicy:
-		log.Printf("%s policy already exists", handlerPolicyName)
-	default:
-		log.Printf("%s policy does not match expected policy, attempting to update", handlerPolicyName)
-		createPolicy = true
+		if strings.Contains(err.Error(), "404") {
+			createPolicy = true
+		} else {
+			return fmt.Errorf("error querying for policy: %w", err)
+		}
+	} else {
+		switch resp.Data.Policy {
+		case "":
+			log.Printf("%s policy not found, attempting to create", handlerPolicyName)
+			createPolicy = true
+		case handlerPolicy:
+			log.Printf("%s policy already exists", handlerPolicyName)
+		default:
+			log.Printf("%s policy does not match expected policy, attempting to update", handlerPolicyName)
+			createPolicy = true
+		}
 	}
 
 	if createPolicy {
