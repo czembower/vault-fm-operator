@@ -49,8 +49,8 @@ func createHandlerPolicy(client *vault.Client) error {
 	return nil
 }
 
-// Verify the KV engine specific by const `kvEnginePath` is present and return the version
-func verifyKvEngine(client *vault.Client) (string, error) {
+// Verify the KV engine specific by c.TokenKvMount is present and return the version
+func verifyKvEngine(client *vault.Client, tokenKvMount string) (string, error) {
 	engines, err := client.System.MountsListSecretsEngines(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("error listing secrets engines")
@@ -60,7 +60,7 @@ func verifyKvEngine(client *vault.Client) (string, error) {
 	var kvVersion string
 	for path, config := range engines.Data {
 		if config.(map[string]interface{})["type"] == "kv" {
-			if path == kvEnginePath+"/" {
+			if path == tokenKvMount+"/" {
 				confimedPath = true
 				if v, ok := config.(map[string]interface{})["options"].(map[string]interface{})["version"]; !ok {
 					kvVersion = "1"
@@ -76,18 +76,18 @@ func verifyKvEngine(client *vault.Client) (string, error) {
 	if !confimedPath {
 		return "", fmt.Errorf("no KV engine found")
 	}
-	log.Printf("KV engine (v%s) found at %s", kvVersion, kvEnginePath)
+	log.Printf("KV engine (v%s) found at %s", kvVersion, tokenKvMount)
 	return kvVersion, nil
 }
 
 // Store the new operations token in the KV engine
-func storeToken(kvVersion string, client *vault.Client, batchToken string) error {
+func storeToken(kvVersion string, client *vault.Client, batchToken string, tokenKvMount string) error {
 	if kvVersion == "2" {
 		_, err := client.Secrets.KvV2Write(context.Background(), tokenKvPath, schema.KvV2WriteRequest{
 			Data: map[string]interface{}{
 				"token": batchToken,
 			},
-		}, vault.WithMountPath(kvEnginePath))
+		}, vault.WithMountPath(tokenKvMount))
 		if err != nil {
 			return fmt.Errorf("error storing token at %s: %w", tokenKvPath, err)
 		}
@@ -99,7 +99,7 @@ func storeToken(kvVersion string, client *vault.Client, batchToken string) error
 			return fmt.Errorf("error storing token at %s: %w", tokenKvPath, err)
 		}
 	}
-	log.Printf("Token stored at %s/%s", kvEnginePath, tokenKvPath)
+	log.Printf("Token stored at %s/%s", tokenKvMount, tokenKvPath)
 
 	return nil
 }
@@ -218,7 +218,7 @@ func generateOpBatchToken(c *ConfigData) error {
 		return fmt.Errorf("verifyPolicy: %w", err)
 	}
 
-	kvVersion, err := verifyKvEngine(client)
+	kvVersion, err := verifyKvEngine(client, c.TokenKvMount)
 	if err != nil {
 		return fmt.Errorf("verifyKvEngine: %w", err)
 	}
@@ -226,7 +226,7 @@ func generateOpBatchToken(c *ConfigData) error {
 	if err != nil {
 		return fmt.Errorf("createToken: %w", err)
 	}
-	err = storeToken(kvVersion, client, batchToken)
+	err = storeToken(kvVersion, client, batchToken, c.TokenKvMount)
 	if err != nil {
 		return fmt.Errorf("storeToken: %w", err)
 	}

@@ -10,9 +10,6 @@ import (
 )
 
 const (
-	// Set this to the path of the KV engine mount on your Vault cluster where any
-	// generated operation tokens should be stored
-	kvEnginePath = "kv"
 	// Set this to the KV engine path where the operation token should be stored
 	// This path should be a subpath of the KV engine mount specified above.
 	tokenKvPath = "failover-handler"
@@ -36,6 +33,7 @@ type ConfigData struct {
 	OpBatchTokenVerified     bool              `json:"opBatchTokenVerified,omitempty"`
 	SecondaryActivationToken string            `json:"secondaryActivationToken,omitempty"`
 	HighestWal               float64           `json:"highestWal,omitempty"`
+	TokenKvMount             string            `json:"tokenKvPath,omitempty"`
 }
 
 type ClusterData struct {
@@ -155,6 +153,7 @@ func main() {
 	flag.StringVar(&c.ClientConfig.OpBatchToken, "opBatchToken", "", "Operation batch token with a policy that allows for the manipulation of replication configurations on either cluster")
 	flag.BoolVar(&c.ClientConfig.TlsSkipVerify, "tlsSkipVerify", false, "Skip TLS verification of the Vault server's certificate")
 	flag.StringVar(&c.ClientConfig.Mode, "mode", "", "Replication mode to evaluate ('dr' or 'performance')")
+	flag.StringVar(&c.TokenKvMount, "tokenKvMount", "kv", "KV engine mount point where the generated operation token should be stored")
 	flag.Parse()
 
 	for _, arg := range os.Args {
