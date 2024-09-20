@@ -169,6 +169,10 @@ func main() {
 		}
 	})
 
+	if c.ClientConfig.Mode != "dr" && c.ClientConfig.Mode != "performance" {
+		log.Fatalf("Invalid replication mode: %s\n", c.ClientConfig.Mode)
+	}
+
 	c.ClientConfig.verifyAddrs()
 	c.initialize()
 	c.evaluate()

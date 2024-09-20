@@ -61,6 +61,10 @@ path "sys/replication/+/primary/secondary-token" {
 path "sys/replication/+/primary/revoke-secondary" {
   capabilities = ["update"]
 }
+
+path "auth/token/lookup-self" {
+	capabilities = ["read"]
+}
 ```
 
 **Note**: if a token is not included in the arguments at runtime, the operator

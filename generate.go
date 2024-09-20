@@ -114,6 +114,7 @@ func createToken(client *vault.Client, creatorName string) (string, error) {
 		Type:            "batch",
 		Policies:        []string{handlerPolicyName},
 		NoDefaultPolicy: true,
+		NoParent:        true,
 		Ttl:             ttl,
 		DisplayName:     handlerPolicyName,
 		Meta: map[string]interface{}{
@@ -230,6 +231,8 @@ func generateOpBatchToken(c *ConfigData) error {
 	if err != nil {
 		return fmt.Errorf("storeToken: %w", err)
 	}
+
+	fmt.Println("Retrieve the new token from the KV engine, then run this with the `opBatchToken` flag set to the new token")
 
 	return nil
 }
