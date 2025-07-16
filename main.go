@@ -54,6 +54,7 @@ type ClientConfig struct {
 	TlsSkipVerify   bool     `json:"tlsSkipVerify,omitempty"`
 	VerifiedAddrs   []string `json:"verifiedAddrs,omitempty"`
 	LoadBalanced    bool     `json:"loadBalanced,omitempty"`
+	CaFilePath      string   `json:"caFilePath,omitempty"`
 }
 
 type DrConfigBase struct {
@@ -156,6 +157,7 @@ func main() {
 	flag.StringVar(&c.ClientConfig.Mode, "mode", "", "Replication mode to evaluate ('dr' or 'performance')")
 	flag.StringVar(&c.TokenKvMount, "tokenKvMount", "kv", "KV engine mount point where the optional generated batch operation token should be stored")
 	flag.BoolVar(&c.ClientConfig.LoadBalanced, "loadBalanced", false, "Assume load balancing is enabled and use the configured addresses to determine the primary and secondary cluster/API addresses insteaad of the discovered addresses in the cluster configuration")
+	flag.StringVar(&c.ClientConfig.CaFilePath, "caFilePath", "", "The path to the CA file that should be used to establish TLS trust with the primary cluster when enabling/updating replication.")
 	flag.Parse()
 
 	for _, arg := range os.Args {

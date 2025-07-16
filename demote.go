@@ -52,8 +52,13 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 	}
 
 	if c.ClientConfig.LoadBalanced {
-		log.Println("Using load-balanced address for replication config primary_api_addr: ", c.SecondaryCluster.Addr)
+		log.Println("Using load-balanced address for replication config primary_api_addr:", c.SecondaryCluster.Addr)
 		updatePayload["primary_api_addr"] = c.SecondaryCluster.Addr
+	}
+
+	if c.ClientConfig.CaFilePath != "" {
+		log.Println("Using custom CA file for replication config:", c.ClientConfig.CaFilePath)
+		updatePayload["ca_file_path"] = c.ClientConfig.CaFilePath
 	}
 
 	_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
