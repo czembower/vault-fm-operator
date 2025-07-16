@@ -58,7 +58,7 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 
 	if c.ClientConfig.CaFilePath != "" {
 		log.Println("Using custom CA file for replication config:", c.ClientConfig.CaFilePath)
-		updatePayload["ca_file_path"] = c.ClientConfig.CaFilePath
+		updatePayload["ca_file"] = c.ClientConfig.CaFilePath
 	}
 
 	_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
