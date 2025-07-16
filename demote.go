@@ -51,9 +51,18 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 		}
 	}
 
+	// we terminate when we're only healing the config, in which case there is no persona reversal
+	// in that heal-only case, we use the current primary cluster's API address
+	// otherwise, we use the secondary cluster's API address
+	var addr string
+	if terminate {
+		addr = c.PrimaryCluster.Addr
+	} else {
+		addr = c.SecondaryCluster.Addr
+	}
 	if c.ClientConfig.LoadBalanced {
-		log.Println("Using load-balanced address for replication config primary_api_addr:", c.SecondaryCluster.Addr)
-		updatePayload["primary_api_addr"] = c.SecondaryCluster.Addr
+		log.Println("Using load-balanced address for replication config primary_api_addr:", addr)
+		updatePayload["primary_api_addr"] = addr
 	}
 
 	if c.ClientConfig.CaFilePath != "" {
