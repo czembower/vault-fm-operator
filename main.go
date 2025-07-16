@@ -53,6 +53,7 @@ type ClientConfig struct {
 	OpBatchToken    string   `json:"opBatchToken,omitempty"`
 	TlsSkipVerify   bool     `json:"tlsSkipVerify,omitempty"`
 	VerifiedAddrs   []string `json:"verifiedAddrs,omitempty"`
+	LoadBalanced    bool     `json:"loadBalanced,omitempty"`
 }
 
 type DrConfigBase struct {
@@ -153,7 +154,8 @@ func main() {
 	flag.StringVar(&c.ClientConfig.OpBatchToken, "opBatchToken", "", "Operation batch token with a policy that allows for the manipulation of replication configurations on either cluster")
 	flag.BoolVar(&c.ClientConfig.TlsSkipVerify, "tlsSkipVerify", false, "Skip TLS verification of the Vault server's certificate")
 	flag.StringVar(&c.ClientConfig.Mode, "mode", "", "Replication mode to evaluate ('dr' or 'performance')")
-	flag.StringVar(&c.TokenKvMount, "tokenKvMount", "kv", "KV engine mount point where the generated operation token should be stored")
+	flag.StringVar(&c.TokenKvMount, "tokenKvMount", "kv", "KV engine mount point where the optional generated batch operation token should be stored")
+	flag.BoolVar(&c.ClientConfig.LoadBalanced, "loadBalanced", false, "Assume load balancing is enabled and use the configured addresses to determine the primary and secondary cluster/API addresses insteaad of the discovered addresses in the cluster configuration")
 	flag.Parse()
 
 	for _, arg := range os.Args {

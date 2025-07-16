@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
+	"net/url"
 
 	"github.com/hashicorp/vault-client-go"
 )
@@ -81,18 +83,48 @@ func (c *ConfigData) initClient(addr string) error {
 		return err
 	}
 
+	var clusterAddr string
+	if !c.ClientConfig.LoadBalanced {
+		clusterAddr = leaderResp.Data.LeaderClusterAddress
+	} else {
+		clusterAddr = addr
+		clusterAddr, err = adjustPort(clusterAddr)
+		if err != nil {
+			return fmt.Errorf("adjust port: %w", err)
+		}
+		log.Printf("Using load-balanced configuration: cluster address %s", clusterAddr)
+	}
+
 	if addr == c.PrimaryCluster.Addr {
 		c.PrimaryCluster.Client = client
 		c.PrimaryCluster.Healthy = true
 		c.PrimaryCluster.Name = healthResp.Data["cluster_name"].(string)
-		c.PrimaryCluster.ClusterAddr = leaderResp.Data.LeaderClusterAddress
+		c.PrimaryCluster.ClusterAddr = clusterAddr
 	} else {
 		c.SecondaryCluster.Client = client
 		c.SecondaryCluster.Healthy = true
 		c.SecondaryCluster.Name = healthResp.Data["cluster_name"].(string)
-		c.SecondaryCluster.ClusterAddr = leaderResp.Data.LeaderClusterAddress
+		c.SecondaryCluster.ClusterAddr = clusterAddr
 	}
 	log.Printf("Initialized client for %s (%s %s)", addr, c.ClientConfig.Mode, repMode)
 
 	return nil
+}
+
+func adjustPort(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		u.Host = net.JoinHostPort(u.Host, "8201")
+	} else {
+		if port == "8200" {
+			u.Host = net.JoinHostPort(host, "8201")
+		}
+	}
+
+	return u.String(), nil
 }

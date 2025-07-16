@@ -31,6 +31,10 @@ Usage of vault-fm-operator:
         Operation batch token with a policy that allows for the manipulation of replication configurations on either cluster
   -tlsSkipVerify
         Skip TLS verification of the Vault server's certificate
+  -tokenKvMount
+        KV engine mount point where the optional generated batch operation token should be stored
+  -loadBalanced
+        Assume load balancing is enabled and use the configured addresses to determine the primary and secondary cluster/API addresses insteaad of the discovered addresses in the cluster configuration
 ```
 
 ## Flow

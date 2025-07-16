@@ -50,6 +50,12 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 			"token": c.SecondaryActivationToken,
 		}
 	}
+
+	if c.ClientConfig.LoadBalanced {
+		log.Println("Using load-balanced address for replication config primary_api_addr: ", c.SecondaryCluster.Addr)
+		updatePayload["primary_api_addr"] = c.SecondaryCluster.Addr
+	}
+
 	_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
 	if err != nil {
 		log.Printf("%v\n", c)
