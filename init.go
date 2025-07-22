@@ -42,7 +42,11 @@ func (c *ConfigData) buildClient(addr string, token string) (*vault.Client, erro
 	client, err := vault.New(
 		vault.WithAddress(addr),
 		vault.WithRequestTimeout(timeout),
-		vault.WithRetryConfiguration(vault.RetryConfiguration{}),
+		vault.WithRetryConfiguration(vault.RetryConfiguration{
+			RetryWaitMin: 1500,
+			RetryWaitMax: 5000,
+			RetryMax:     5,
+		}),
 		vault.WithTLS(tls),
 	)
 	if err != nil {
