@@ -72,7 +72,7 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 
 	_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
 	if err != nil {
-		log.Printf("%v\n", c)
+		log.Printf("%+v\n", c)
 		return fmt.Errorf("update-primary operation failed: %w", err)
 	}
 	log.Println("Successfully updated secondary cluster with new primary address")
