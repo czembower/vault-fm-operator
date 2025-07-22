@@ -88,5 +88,7 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 		lastErr = err
 	}
 
+	log.Printf("Request details: %s: %+v", client.Configuration().Address, updatePayload)
+
 	return fmt.Errorf("update-primary operation failed after retries: %w", lastErr)
 }
