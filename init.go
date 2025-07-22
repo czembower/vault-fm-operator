@@ -45,7 +45,7 @@ func (c *ConfigData) buildClient(addr string, token string) (*vault.Client, erro
 		vault.WithRetryConfiguration(vault.RetryConfiguration{
 			RetryWaitMin: 1500,
 			RetryWaitMax: 5000,
-			RetryMax:     5,
+			RetryMax:     10,
 		}),
 		vault.WithTLS(tls),
 	)
@@ -96,7 +96,7 @@ func (c *ConfigData) initClient(addr string) error {
 		if err != nil {
 			return fmt.Errorf("adjust port: %w", err)
 		}
-		log.Printf("Using load-balanced configuration: cluster address %s", clusterAddr)
+		log.Printf("Using load-balanced configuration for cluster address: %s", clusterAddr)
 	}
 
 	if addr == c.PrimaryCluster.Addr {

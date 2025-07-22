@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/hashicorp/vault-client-go"
 )
@@ -64,23 +65,28 @@ func (c *ConfigData) updatePrimary(client *vault.Client, terminate bool) error {
 		log.Println("Using load-balanced address for replication config primary_api_addr:", addr)
 		updatePayload["primary_api_addr"] = addr
 	}
-
 	if c.ClientConfig.CaFilePath != "" {
 		log.Println("Using custom CA file for replication config:", c.ClientConfig.CaFilePath)
 		updatePayload["ca_file"] = c.ClientConfig.CaFilePath
 	}
 
-	_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
-	if err != nil {
-		log.Printf("%+v\n", c)
-		return fmt.Errorf("update-primary operation failed: %w", err)
+	var lastErr error
+	maxRetries := 5
+	for range make([]struct{}, maxRetries) {
+		_, err := client.Write(context.Background(), replicationPath+c.ClientConfig.Mode+"/secondary/update-primary", updatePayload)
+		if err == nil {
+			log.Println("Successfully updated secondary cluster with new primary address")
+			if terminate {
+				log.Println("Operation completed successfully")
+				os.Exit(0)
+			} else {
+				return nil
+			}
+		}
+		log.Printf("update-primary operation failed: %v", err)
+		time.Sleep(3 * time.Second)
+		lastErr = err
 	}
-	log.Println("Successfully updated secondary cluster with new primary address")
 
-	if terminate {
-		log.Println("Operation completed successfully")
-		os.Exit(0)
-	}
-
-	return nil
+	return fmt.Errorf("update-primary operation failed after retries: %w", lastErr)
 }
